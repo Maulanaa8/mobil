@@ -1,60 +1,88 @@
 import streamlit as st
 import random
 
-st.set_page_config(page_title="Game Tebak Kata 🎮", page_icon="🧩", layout="centered")
+st.set_page_config(page_title="Flappy Bird 🐦", page_icon="🐦", layout="centered")
 
-st.title("🎮 Game Tebak Kata")
-st.write("Coba tebak kata yang disembunyikan! Kamu punya 6 kesempatan ❌.")
-
-# Daftar kata
-word_list = ["python", "streamlit", "teknologi", "komputer", "mahasiswa", "kecerdasan", "universitas"]
+st.title("🐦 Flappy Bird Streamlit")
 
 # Inisialisasi state
-if "word" not in st.session_state:
-    st.session_state.word = random.choice(word_list)
-if "guessed" not in st.session_state:
-    st.session_state.guessed = []
-if "lives" not in st.session_state:
-    st.session_state.lives = 6
+if "bird_y" not in st.session_state:
+    st.session_state.bird_y = 5
+if "pipes" not in st.session_state:
+    st.session_state.pipes = [[15, random.randint(2, 8)]]
+if "score" not in st.session_state:
+    st.session_state.score = 0
 if "game_over" not in st.session_state:
     st.session_state.game_over = False
 
-# Fungsi reset game
+height = 12
+width = 20
+gap = 4
+
+# Fungsi reset
 def reset_game():
-    st.session_state.word = random.choice(word_list)
-    st.session_state.guessed = []
-    st.session_state.lives = 6
+    st.session_state.bird_y = 5
+    st.session_state.pipes = [[15, random.randint(2, 8)]]
+    st.session_state.score = 0
     st.session_state.game_over = False
 
-# Input huruf
-guess = st.text_input("Masukkan huruf (a-z):", max_chars=1).lower()
-
-if st.button("Tebak") and not st.session_state.game_over:
-    if guess and guess.isalpha():
-        if guess in st.session_state.word:
-            st.success(f"Huruf **{guess}** ada di kata!")
-            st.session_state.guessed.append(guess)
-        else:
-            st.error(f"Huruf **{guess}** tidak ada 😢")
-            st.session_state.lives -= 1
-
-    # Cek kondisi menang / kalah
-    if all(letter in st.session_state.guessed for letter in set(st.session_state.word)):
-        st.session_state.game_over = True
-        st.balloons()
-        st.success(f"🎉 Selamat! Kamu berhasil menebak kata **{st.session_state.word}**")
-
-    if st.session_state.lives <= 0:
-        st.session_state.game_over = True
-        st.error(f"Game Over 😭 Kata yang benar adalah **{st.session_state.word}**")
-
-# Tampilkan kata dengan huruf yang sudah ditebak
-display_word = " ".join([letter if letter in st.session_state.guessed else "_" for letter in st.session_state.word])
-st.subheader(f"**{display_word}**")
-
-# Nyawa tersisa
-st.write(f"❤️ Kesempatan tersisa: {st.session_state.lives}")
-
-# Tombol restart
-if st.button("🔄 Main Lagi"):
+# Tombol kontrol
+col1, col2, col3 = st.columns(3)
+if col1.button("⬆️ Flap"):
+    st.session_state.bird_y -= 2
+if col3.button("🔄 Restart"):
     reset_game()
+
+# Update game hanya kalau belum game over
+if not st.session_state.game_over:
+    st.session_state.bird_y += 1  # efek gravitasi
+
+    # Gerakin pipa
+    new_pipes = []
+    for x, hole_y in st.session_state.pipes:
+        x -= 1
+        if x > 0:
+            new_pipes.append([x, hole_y])
+        else:
+            st.session_state.score += 1
+    st.session_state.pipes = new_pipes
+
+    # Spawn pipa baru
+    if len(st.session_state.pipes) == 0 or st.session_state.pipes[-1][0] < width - 8:
+        st.session_state.pipes.append([width - 1, random.randint(2, height - gap - 2)])
+
+    # Cek tabrakan
+    for x, hole_y in st.session_state.pipes:
+        if x == 2:  # posisi burung (fix di kolom 2)
+            if not (hole_y <= st.session_state.bird_y <= hole_y + gap):
+                st.session_state.game_over = True
+
+    if st.session_state.bird_y < 0 or st.session_state.bird_y >= height:
+        st.session_state.game_over = True
+
+# Gambar arena
+arena = [["⬛" for _ in range(width)] for _ in range(height)]
+
+# Gambar pipa
+for x, hole_y in st.session_state.pipes:
+    for y in range(height):
+        if not (hole_y <= y <= hole_y + gap):
+            arena[y][x] = "🟩"
+
+# Gambar burung
+if not st.session_state.game_over:
+    arena[st.session_state.bird_y][2] = "🐦"
+else:
+    arena[st.session_state.bird_y if 0 <= st.session_state.bird_y < height else height-1][2] = "💀"
+
+# Render arena
+for row in arena:
+    st.write("".join(row))
+
+st.subheader(f"🏆 Score: {st.session_state.score}")
+
+if st.session_state.game_over:
+    st.error("Game Over 😭 Tekan 🔄 Restart untuk main lagi")
+
+# Auto refresh
+st.experimental_rerun()
