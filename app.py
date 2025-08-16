@@ -17,26 +17,28 @@ if "lives" not in st.session_state:
     st.session_state.lives = 6
 if "game_over" not in st.session_state:
     st.session_state.game_over = False
+if "last_guess" not in st.session_state:
+    st.session_state.last_guess = ""
 
-# Fungsi reset
 def reset_game():
     st.session_state.word = random.choice(word_list)
     st.session_state.guessed_letters = []
     st.session_state.lives = 6
     st.session_state.game_over = False
+    st.session_state.last_guess = ""
 
 # Tampilkan jumlah huruf
 display_word = " ".join([letter if letter in st.session_state.guessed_letters else "_" for letter in st.session_state.word])
 st.subheader(f"Kata: {display_word}")
 st.caption(f"Jumlah huruf: {len(st.session_state.word)}")
 
-# Input huruf pakai form biar langsung jalan
+# Input huruf langsung diproses
 if not st.session_state.game_over:
-    with st.form("guess_form", clear_on_submit=True):
-        guess = st.text_input("Masukkan satu huruf:", max_chars=1).lower()
-        submit = st.form_submit_button("Tebak")
+    guess = st.text_input("Masukkan satu huruf:", max_chars=1, key="guess_input").lower()
 
-    if submit and guess:
+    # Cek kalau ada huruf baru diketik (beda dari last_guess)
+    if guess and guess != st.session_state.last_guess:
+        st.session_state.last_guess = guess
         if guess in st.session_state.guessed_letters:
             st.warning(f"Huruf **{guess}** sudah ditebak!")
         elif guess in st.session_state.word:
