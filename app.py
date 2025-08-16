@@ -1,85 +1,60 @@
 import streamlit as st
 import random
-import time
 
-# Setup UI
-st.set_page_config(page_title="Racing Game 🚗", page_icon="🏎️", layout="centered")
+st.set_page_config(page_title="Game Tebak Kata 🎮", page_icon="🧩", layout="centered")
 
-st.title("🏎️ Racing Game by Gen Z")
+st.title("🎮 Game Tebak Kata")
+st.write("Coba tebak kata yang disembunyikan! Kamu punya 6 kesempatan ❌.")
 
-# State
-if "player_x" not in st.session_state:
-    st.session_state.player_x = 2  # posisi awal (0-4)
-if "score" not in st.session_state:
-    st.session_state.score = 0
-if "enemies" not in st.session_state:
-    st.session_state.enemies = []
+# Daftar kata
+word_list = ["python", "streamlit", "teknologi", "komputer", "mahasiswa", "kecerdasan", "universitas"]
+
+# Inisialisasi state
+if "word" not in st.session_state:
+    st.session_state.word = random.choice(word_list)
+if "guessed" not in st.session_state:
+    st.session_state.guessed = []
+if "lives" not in st.session_state:
+    st.session_state.lives = 6
 if "game_over" not in st.session_state:
     st.session_state.game_over = False
 
-road_width = 5  # jumlah jalur
-road_height = 12  # tinggi arena
-car_symbol = "🚙"
-enemy_symbol = "🚗"
-
+# Fungsi reset game
 def reset_game():
-    st.session_state.player_x = 2
-    st.session_state.score = 0
-    st.session_state.enemies = []
+    st.session_state.word = random.choice(word_list)
+    st.session_state.guessed = []
+    st.session_state.lives = 6
     st.session_state.game_over = False
 
-# Kontrol player
-col1, col2, col3 = st.columns(3)
-if col1.button("⬅️"):
-    if st.session_state.player_x > 0:
-        st.session_state.player_x -= 1
-if col3.button("➡️"):
-    if st.session_state.player_x < road_width - 1:
-        st.session_state.player_x += 1
-if col2.button("🔄 Restart"):
-    reset_game()
+# Input huruf
+guess = st.text_input("Masukkan huruf (a-z):", max_chars=1).lower()
 
-# Update game
-if not st.session_state.game_over:
-    # spawn musuh random
-    if random.randint(0, 3) == 0:
-        st.session_state.enemies.append([random.randint(0, road_width - 1), 0])
-
-    # gerakin musuh ke bawah
-    new_enemies = []
-    for (ex, ey) in st.session_state.enemies:
-        ey += 1
-        if ey < road_height:
-            new_enemies.append([ex, ey])
+if st.button("Tebak") and not st.session_state.game_over:
+    if guess and guess.isalpha():
+        if guess in st.session_state.word:
+            st.success(f"Huruf **{guess}** ada di kata!")
+            st.session_state.guessed.append(guess)
         else:
-            st.session_state.score += 1
-    st.session_state.enemies = new_enemies
+            st.error(f"Huruf **{guess}** tidak ada 😢")
+            st.session_state.lives -= 1
 
-    # cek tabrakan
-    for (ex, ey) in st.session_state.enemies:
-        if ey == road_height - 1 and ex == st.session_state.player_x:
-            st.session_state.game_over = True
+    # Cek kondisi menang / kalah
+    if all(letter in st.session_state.guessed for letter in set(st.session_state.word)):
+        st.session_state.game_over = True
+        st.balloons()
+        st.success(f"🎉 Selamat! Kamu berhasil menebak kata **{st.session_state.word}**")
 
-# Gambar arena
-arena = [["⬛" for _ in range(road_width)] for _ in range(road_height)]
+    if st.session_state.lives <= 0:
+        st.session_state.game_over = True
+        st.error(f"Game Over 😭 Kata yang benar adalah **{st.session_state.word}**")
 
-# taruh musuh
-for (ex, ey) in st.session_state.enemies:
-    arena[ey][ex] = enemy_symbol
+# Tampilkan kata dengan huruf yang sudah ditebak
+display_word = " ".join([letter if letter in st.session_state.guessed else "_" for letter in st.session_state.word])
+st.subheader(f"**{display_word}**")
 
-# taruh player
-if not st.session_state.game_over:
-    arena[road_height - 1][st.session_state.player_x] = car_symbol
-else:
-    arena[road_height - 1][st.session_state.player_x] = "💥"
+# Nyawa tersisa
+st.write(f"❤️ Kesempatan tersisa: {st.session_state.lives}")
 
-# Tampilkan arena
-for row in arena:
-    st.write(" ".join(row))
-
-# Skor
-st.subheader(f"🏆 Score: {st.session_state.score}")
-
-# Game over
-if st.session_state.game_over:
-    st.error("Game Over 😭 Tekan 🔄 Restart buat main lagi!")
+# Tombol restart
+if st.button("🔄 Main Lagi"):
+    reset_game()
