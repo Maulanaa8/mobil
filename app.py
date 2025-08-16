@@ -1,10 +1,32 @@
 import streamlit as st
 import random
 
-st.set_page_config(page_title="Game Tebak Kata 🎮", page_icon="🧩", layout="centered")
+st.set_page_config(page_title="Game Tebak Kata 🎮", page_icon="🧩", layout="wide")
+
+# CSS Custom buat mobile
+st.markdown("""
+    <style>
+    .big-word {
+        font-size: 28px !important;
+        letter-spacing: 8px;
+        font-weight: bold;
+        text-align: center;
+    }
+    .stTextInput>div>div>input {
+        text-align: center;
+        font-size: 20px;
+    }
+    .stButton>button {
+        width: 100%;
+        font-size: 18px;
+        padding: 12px;
+        border-radius: 10px;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
 st.title("🎮 Game Tebak Kata")
-st.write("Coba tebak kata yang disembunyikan! Kamu punya 6 kesempatan ❌.")
+st.caption("Coba tebak kata yang disembunyikan! Kamu punya 6 kesempatan ❌")
 
 # Daftar kata
 word_list = ["python", "streamlit", "teknologi", "komputer", "mahasiswa", "kecerdasan", "universitas"]
@@ -19,7 +41,7 @@ if "lives" not in st.session_state:
 if "game_over" not in st.session_state:
     st.session_state.game_over = False
 
-# Fungsi reset game
+# Fungsi reset
 def reset_game():
     st.session_state.word = random.choice(word_list)
     st.session_state.guessed = []
@@ -27,9 +49,13 @@ def reset_game():
     st.session_state.game_over = False
 
 # Input huruf
-guess = st.text_input("Masukkan huruf (a-z):", max_chars=1).lower()
+col1, col2 = st.columns([3, 1])
+with col1:
+    guess = st.text_input("Masukkan huruf (a-z):", max_chars=1).lower()
+with col2:
+    submit = st.button("✅ Tebak")
 
-if st.button("Tebak") and not st.session_state.game_over:
+if submit and not st.session_state.game_over:
     if guess and guess.isalpha():
         if guess in st.session_state.word:
             st.success(f"Huruf **{guess}** ada di kata!")
@@ -38,23 +64,23 @@ if st.button("Tebak") and not st.session_state.game_over:
             st.error(f"Huruf **{guess}** tidak ada 😢")
             st.session_state.lives -= 1
 
-    # Cek kondisi menang / kalah
+    # Cek menang
     if all(letter in st.session_state.guessed for letter in set(st.session_state.word)):
         st.session_state.game_over = True
         st.balloons()
         st.success(f"🎉 Selamat! Kamu berhasil menebak kata **{st.session_state.word}**")
 
+    # Cek kalah
     if st.session_state.lives <= 0:
         st.session_state.game_over = True
         st.error(f"Game Over 😭 Kata yang benar adalah **{st.session_state.word}**")
 
-# Tampilkan kata dengan huruf yang sudah ditebak
+# Tampilkan kata
 display_word = " ".join([letter if letter in st.session_state.guessed else "_" for letter in st.session_state.word])
-st.subheader(f"**{display_word}**")
+st.markdown(f"<div class='big-word'>{display_word}</div>", unsafe_allow_html=True)
 
-# Nyawa tersisa
-st.write(f"❤️ Kesempatan tersisa: {st.session_state.lives}")
+# Nyawa
+st.write(f"❤️ Kesempatan tersisa: **{st.session_state.lives}**")
 
 # Tombol restart
-if st.button("🔄 Main Lagi"):
-    reset_game()
+st.button("🔄 Main Lagi", on_click=reset_game)
