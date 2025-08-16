@@ -30,20 +30,21 @@ display_word = " ".join([letter if letter in st.session_state.guessed_letters el
 st.subheader(f"Kata: {display_word}")
 st.caption(f"Jumlah huruf: {len(st.session_state.word)}")
 
-# Input huruf
+# Input huruf pakai form biar langsung jalan
 if not st.session_state.game_over:
-    guess = st.text_input("Masukkan satu huruf:", max_chars=1).lower()
+    with st.form("guess_form", clear_on_submit=True):
+        guess = st.text_input("Masukkan satu huruf:", max_chars=1).lower()
+        submit = st.form_submit_button("Tebak")
 
-    if st.button("Tebak"):
-        if guess and guess.isalpha():
-            if guess in st.session_state.guessed_letters:
-                st.warning(f"Huruf **{guess}** sudah ditebak!")
-            elif guess in st.session_state.word:
-                st.success(f"Huruf **{guess}** ada di kata!")
-                st.session_state.guessed_letters.append(guess)
-            else:
-                st.error(f"Huruf **{guess}** tidak ada 😢")
-                st.session_state.lives -= 1
+    if submit and guess:
+        if guess in st.session_state.guessed_letters:
+            st.warning(f"Huruf **{guess}** sudah ditebak!")
+        elif guess in st.session_state.word:
+            st.success(f"Huruf **{guess}** ada di kata!")
+            st.session_state.guessed_letters.append(guess)
+        else:
+            st.error(f"Huruf **{guess}** tidak ada 😢")
+            st.session_state.lives -= 1
 
         # Cek menang
         if all(letter in st.session_state.guessed_letters for letter in st.session_state.word):
