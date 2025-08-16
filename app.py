@@ -1,76 +1,63 @@
 import streamlit as st
 import random
 
-st.set_page_config(page_title="Game Tebak Kata 🧩", page_icon="🧩", layout="centered")
+st.set_page_config(page_title="Tebak Kata ✨", page_icon="🧩", layout="centered")
 
-st.title("🧩 Game Tebak Kata Versi Kompleks (Wordle Style)")
+st.title("🧩 Game Tebak Kata per Huruf")
 
-# Level & kata
-word_bank = {
-    "Mudah": ["kucing", "pisang", "burung", "mobil", "bunga"],
-    "Normal": ["teknologi", "komputer", "mahasiswa", "universitas", "perpustakaan"],
-    "Sulit": ["kecerdasan", "algoritma", "implementasi", "pengembangan", "streamlit"]
-}
+# Daftar kata
+word_list = ["python", "streamlit", "teknologi", "komputer", "mahasiswa", "universitas", "algoritma"]
 
 # Init state
-if "level" not in st.session_state:
-    st.session_state.level = "Mudah"
 if "word" not in st.session_state:
-    st.session_state.word = random.choice(word_bank[st.session_state.level])
-if "guesses" not in st.session_state:
-    st.session_state.guesses = []
-if "max_attempts" not in st.session_state:
-    st.session_state.max_attempts = 6
+    st.session_state.word = random.choice(word_list)
+if "guessed_letters" not in st.session_state:
+    st.session_state.guessed_letters = []
+if "lives" not in st.session_state:
+    st.session_state.lives = 6
 if "game_over" not in st.session_state:
     st.session_state.game_over = False
 
-# Reset game
+# Fungsi reset
 def reset_game():
-    st.session_state.word = random.choice(word_bank[st.session_state.level])
-    st.session_state.guesses = []
+    st.session_state.word = random.choice(word_list)
+    st.session_state.guessed_letters = []
+    st.session_state.lives = 6
     st.session_state.game_over = False
 
-# Pilih level
-level = st.radio("Pilih Level:", ["Mudah", "Normal", "Sulit"], horizontal=True)
-if level != st.session_state.level:
-    st.session_state.level = level
-    reset_game()
+# Tampilkan jumlah huruf
+display_word = " ".join([letter if letter in st.session_state.guessed_letters else "_" for letter in st.session_state.word])
+st.subheader(f"Kata: {display_word}")
+st.caption(f"Jumlah huruf: {len(st.session_state.word)}")
 
-# Input tebakan
+# Input huruf
 if not st.session_state.game_over:
-    guess = st.text_input("Masukkan tebakan kata:", "").lower()
+    guess = st.text_input("Masukkan satu huruf:", max_chars=1).lower()
 
     if st.button("Tebak"):
-        if len(guess) == len(st.session_state.word):
-            st.session_state.guesses.append(guess)
-        else:
-            st.warning(f"Kata harus {len(st.session_state.word)} huruf!")
+        if guess and guess.isalpha():
+            if guess in st.session_state.guessed_letters:
+                st.warning(f"Huruf **{guess}** sudah ditebak!")
+            elif guess in st.session_state.word:
+                st.success(f"Huruf **{guess}** ada di kata!")
+                st.session_state.guessed_letters.append(guess)
+            else:
+                st.error(f"Huruf **{guess}** tidak ada 😢")
+                st.session_state.lives -= 1
 
-# Render tebakan dengan warna
-def render_guess(guess, word):
-    result = []
-    for i, ch in enumerate(guess):
-        if ch == word[i]:
-            result.append(f"🟩 {ch.upper()} ")
-        elif ch in word:
-            result.append(f"🟨 {ch.upper()} ")
-        else:
-            result.append(f"⬜ {ch.upper()} ")
-    return "".join(result)
+        # Cek menang
+        if all(letter in st.session_state.guessed_letters for letter in st.session_state.word):
+            st.success(f"🎉 Selamat! Kamu berhasil menebak kata **{st.session_state.word.upper()}**")
+            st.session_state.game_over = True
 
-for g in st.session_state.guesses:
-    st.write(render_guess(g, st.session_state.word))
+        # Cek kalah
+        if st.session_state.lives <= 0:
+            st.error(f"Game Over 😭 Kata yang benar adalah **{st.session_state.word.upper()}**")
+            st.session_state.game_over = True
 
-# Cek kondisi akhir
-if len(st.session_state.guesses) > 0:
-    if st.session_state.guesses[-1] == st.session_state.word:
-        st.success(f"🎉 Selamat! Kata yang benar adalah **{st.session_state.word.upper()}**")
-        st.session_state.game_over = True
-    elif len(st.session_state.guesses) >= st.session_state.max_attempts:
-        st.error(f"Game Over 😭 Kata yang benar adalah **{st.session_state.word.upper()}**")
-        st.session_state.game_over = True
+# Tampilkan nyawa
+st.write(f"❤️ Kesempatan tersisa: {st.session_state.lives}")
 
 # Tombol restart
-if st.session_state.game_over:
-    if st.button("🔄 Main Lagi"):
-        reset_game()
+if st.button("🔄 Main Lagi"):
+    reset_game()
