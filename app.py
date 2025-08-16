@@ -40,6 +40,8 @@ if "lives" not in st.session_state:
     st.session_state.lives = 6
 if "game_over" not in st.session_state:
     st.session_state.game_over = False
+if "current_guess" not in st.session_state:
+    st.session_state.current_guess = ""
 
 # Fungsi reset
 def reset_game():
@@ -47,11 +49,16 @@ def reset_game():
     st.session_state.guessed = []
     st.session_state.lives = 6
     st.session_state.game_over = False
+    st.session_state.current_guess = ""
 
 # Input huruf
 col1, col2 = st.columns([3, 1])
 with col1:
-    guess = st.text_input("Masukkan huruf (a-z):", max_chars=1).lower()
+    guess = st.text_input(
+        "Masukkan huruf (a-z):",
+        max_chars=1,
+        key="current_guess"
+    ).lower()
 with col2:
     submit = st.button("✅ Tebak")
 
@@ -63,6 +70,9 @@ if submit and not st.session_state.game_over:
         else:
             st.error(f"Huruf **{guess}** tidak ada 😢")
             st.session_state.lives -= 1
+
+    # clear input setelah submit
+    st.session_state.current_guess = ""
 
     # Cek menang
     if all(letter in st.session_state.guessed for letter in set(st.session_state.word)):
